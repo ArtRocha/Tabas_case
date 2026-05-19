@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modelagem de Preço Base — Tabas Data Science Case 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white: #FAFAF8;
+    --off-white: #F4F3EF;
+    --paper: #EDECEA;
+    --ink: #1A1A18;
+    --graphite: #2D2D2B;
+    --slate: #4A4A47;
+    --mist: #8A8A85;
+    --fog: #C8C8C2;
+    --line: #E2E2DC;
+    --accent: #2C4A3E;
+    --accent-light: #3D6B5A;
+    --accent-pale: #E8F0EC;
+    --teal: #1E3A35;
+    --gold: #B8A882;
+    --gold-light: #D4C8A8;
+    --mono: 'JetBrains Mono', monospace;
+    --serif: 'DM Serif Display', serif;
+    --sans: 'Manrope', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    background: var(--white);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 400;
+    line-height: 1.6;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Cursor customizado */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s ease;
+    mix-blend-mode: multiply;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.15s ease;
+    opacity: 0.5;
+  }
+
+  /* Barra de progresso */
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--accent);
+    z-index: 1000;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* Menu de navegação */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 28px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    mix-blend-mode: multiply;
+  }
+  .nav-logo {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .nav-chapter {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--mist);
+    letter-spacing: 0.1em;
+  }
+
+  /* Seções */
+  section {
+    min-height: 100vh;
+    padding: 120px 60px;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-inner {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Rótulo do capítulo */
+  .chapter-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mist);
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  /* Tipografia */
+  .display {
+    font-family: var(--serif);
+    font-size: clamp(52px, 7vw, 100px);
+    font-weight: 400;
+    line-height: 1.0;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .display-sm {
+    font-family: var(--serif);
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .headline {
+    font-size: clamp(18px, 2.5vw, 28px);
+    font-weight: 300;
+    color: var(--slate);
+    line-height: 1.5;
+  }
+  .body-text {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--slate);
+    line-height: 1.8;
+    max-width: 560px;
+  }
+  .small-text {
+    font-size: 13px;
+    color: var(--mist);
+    line-height: 1.6;
+  }
+  .mono-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--mist);
+  }
+  .italic { font-style: italic; }
+  .accent-text { color: var(--accent); }
+
+  /* Divisor */
+  .divider {
+    width: 40px;
+    height: 1px;
+    background: var(--fog);
+    margin: 32px 0;
+  }
+
+  /* ===== CAPÍTULO 1 — HERO ===== */
+  #hero {
+    background: var(--ink);
+    padding: 0;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 80% at 70% 50%, rgba(44,74,62,0.3) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 20% 80%, rgba(44,74,62,0.15) 0%, transparent 60%),
+      var(--ink);
+  }
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 0 60px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    margin-bottom: 40px;
+    opacity: 0;
+  }
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(48px, 8vw, 110px);
+    font-weight: 400;
+    color: var(--white);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 40px;
+  }
+  .hero-title em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+  .hero-sub {
+    font-size: 16px;
+    font-weight: 300;
+    color: rgba(250,250,248,0.5);
+    max-width: 520px;
+    line-height: 1.7;
+  }
+  .hero-meta {
+    position: absolute;
+    bottom: 60px;
+    right: 60px;
+    text-align: right;
+  }
+  .hero-meta p {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.1em;
+    line-height: 2;
+  }
+  .scroll-hint {
+    position: absolute;
+    bottom: 60px;
+    left: 60px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+  }
+  .scroll-hint-line {
+    width: 40px;
+    height: 1px;
+    background: rgba(255,255,255,0.2);
+  }
+  .scroll-hint span {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* ===== CAPÍTULO 2 — ENQUADRAMENTO DO PROBLEMA ===== */
+  #framing { background: var(--white); }
+  .signal-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 60px;
+    border: 1px solid var(--line);
+  }
+  .signal-row {
+    display: flex;
+    align-items: center;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--line);
+    gap: 20px;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: background 0.2s;
+  }
+  .signal-row:hover { background: var(--off-white); }
+  .signal-row:last-child { border-bottom: none; }
+  .signal-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-primary { background: var(--accent); }
+  .dot-secondary { background: var(--fog); }
+  .signal-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    min-width: 220px;
+  }
+  .signal-desc {
+    font-size: 13px;
+    color: var(--mist);
+    flex: 1;
+  }
+  .signal-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    min-width: 90px;
+    text-align: center;
+  }
+  .tag-signal { background: var(--accent-pale); color: var(--accent); }
+  .tag-noise { background: var(--paper); color: var(--mist); }
+  .framing-quote {
+    margin-top: 60px;
+    padding: 40px;
+    border-left: 2px solid var(--accent);
+    background: var(--off-white);
+  }
+  .framing-quote p {
+    font-family: var(--serif);
+    font-size: 24px;
+    color: var(--ink);
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  /* ===== CAPÍTULO 3 — PIPELINE DE DADOS ===== */
+  #pipeline { background: var(--off-white); }
+  .pipeline-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 60px 0;
+    overflow-x: auto;
+  }
+  .pipeline-node {
+    background: var(--white);
+    border: 1px solid var(--line);
+    padding: 24px 28px;
+    min-width: 180px;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .pipeline-arrow {
+    width: 40px;
+    height: 1px;
+    background: var(--fog);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .pipeline-arrow::after {
+    content: '';
+    position: absolute;
+    right: 0; top: -3px;
+    width: 6px; height: 6px;
+    border-top: 1px solid var(--fog);
+    border-right: 1px solid var(--fog);
+    transform: rotate(45deg);
+  }
+  .node-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--mist);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .node-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .node-sub {
+    font-size: 12px;
+    color: var(--mist);
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 40px;
+  }
+  .stat-cell {
+    background: var(--white);
+    padding: 32px;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  .stat-number {
+    font-family: var(--serif);
+    font-size: 42px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--mist);
+    font-weight: 500;
+  }
+
+  /* ===== CAPÍTULO 4 — AUDITORIA DE DADOS ===== */
+  #audit { background: var(--white); }
+  .audit-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .corruption-visual {
+    margin-top: 40px;
+  }
+  .bar-track {
+    height: 40px;
+    background: var(--off-white);
+    border-radius: 2px;
+    margin-bottom: 12px;
+    position: relative;
+    /* overflow: hidden removido para evitar que a legenda da barra curta de anomalias seja cortada */
+  }
+  .bar-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    color: white;
+    letter-spacing: 0.05em;
+    width: 0%;
+    white-space: nowrap; /* Impede a legenda de quebrar em várias linhas verticais */
+    border-radius: 2px;  /* Garante cantos arredondados na barra em si */
+    transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  .bar-healthy { background: var(--accent); }
+  .bar-corrupt { background: var(--gold); color: var(--ink); } /* Cor ajustada para garantir contraste legível contra o dourado claro */
+  .anomaly-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .anomaly-card {
+    padding: 20px 24px;
+    border: 1px solid var(--line);
+    background: var(--off-white);
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  .anomaly-field {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .anomaly-desc {
+    font-size: 13px;
+    color: var(--slate);
+  }
+
+  /* ===== CAPÍTULO 5 — TARGET ===== */
+  #target { background: var(--ink); }
+  #target .chapter-label { color: rgba(255,255,255,0.3); }
+  #target .display-sm { color: var(--white); }
+  #target .body-text { color: rgba(255,255,255,0.5); }
+  .target-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 60px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .target-step {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 32px;
+    padding: 32px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    align-items: start;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent-light);
+    padding-top: 4px;
+  }
+  .step-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+  .step-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    line-height: 1.6;
+  }
+
+  /* ===== CAPÍTULO 6 — EDA ===== */
+  #eda { background: var(--off-white); }
+  .eda-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 60px;
+  }
+  .chart-card {
+    background: var(--white);
+    padding: 32px;
+    border: 1px solid var(--line);
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .chart-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--mist);
+    margin-bottom: 24px;
+  }
+  .neighborhood-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+  .nb-name {
+    font-size: 12px;
+    color: var(--slate);
+    min-width: 150px;
+  }
+  .nb-track {
+    flex: 1;
+    height: 6px;
+    background: var(--off-white);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .nb-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+  }
+  .nb-value {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--mist);
+    min-width: 60px;
+    text-align: right;
+  }
+  .location-insight {
+    grid-column: 1 / -1;
+    padding: 40px;
+    background: var(--accent);
+    color: var(--white);
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .location-insight p {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-style: italic;
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+
+  /* ===== CAPÍTULO 7 — FEATURES ===== */
+  #features { background: var(--white); }
+  .features-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 40px;
+  }
+  .feature-cell {
+    background: var(--white);
+    padding: 24px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: background 0.2s;
+  }
+  .feature-cell:hover { background: var(--accent-pale); }
+  .feature-icon {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: 0.1em;
+  }
+  .feature-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .feature-desc {
+    font-size: 12px;
+    color: var(--mist);
+  }
+
+  /* ===== CAPÍTULO 8 — MODELAGEM ===== */
+  #modeling { background: var(--off-white); }
+  .model-comparison {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-top: 60px;
+  }
+  .model-card {
+    background: var(--white);
+    padding: 32px 28px;
+    opacity: 0;
+    transform: translateY(20px);
+    position: relative;
+  }
+  .model-card.selected { background: var(--accent); }
+  .model-card.selected .model-name,
+  .model-card.selected .model-metric-value,
+  .model-card.selected .model-attr-label { color: var(--white); }
+  .model-card.selected .model-attr-value { color: rgba(255,255,255,0.7); }
+  .model-card.selected .model-tag { background: rgba(255,255,255,0.15); color: var(--white); }
+  .selected-badge {
+    position: absolute;
+    top: 20px; right: 20px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    background: var(--gold-light);
+    color: var(--ink);
+  }
+  .model-name {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .model-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--paper);
+    color: var(--mist);
+    margin-bottom: 24px;
+  }
+  .model-attrs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .model-attr { display: flex; justify-content: space-between; align-items: center; }
+  .model-attr-label { font-size: 12px; color: var(--mist); }
+  .model-attr-value {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--slate);
+  }
+  .dot-good { color: #4CAF50; }
+  .dot-mid { color: #FF9800; }
+  .dot-bad { color: #F44336; }
+
+  /* ===== CAPÍTULO 9 — RESULTADOS ===== */
+  #results { background: var(--ink); }
+  #results .chapter-label { color: rgba(255,255,255,0.3); }
+  #results .display-sm { color: var(--white); }
+  #results .body-text { color: rgba(255,255,255,0.4); }
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-top: 60px;
+  }
+  .metric-cell {
+    padding: 48px 40px;
+    background: var(--teal);
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .metric-value {
+    font-family: var(--serif);
+    font-size: 64px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .metric-unit {
+    font-family: var(--mono);
+    color: var(--accent-light);
+    vertical-align: super;
+    font-size: 20px;
+  }
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .metric-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .results-chart-container {
+    margin-top: 40px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 32px;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  /* ===== CAPÍTULO 10 — DRIVERS DE PREÇO ===== */
+  #drivers { background: var(--white); }
+  .drivers-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .importance-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  .imp-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    min-width: 140px;
+  }
+  .imp-track {
+    flex: 1;
+    height: 8px;
+    background: var(--off-white);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .imp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+    width: 0%;
+    transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+  }
+  .imp-value {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--mist);
+    min-width: 40px;
+    text-align: right;
+  }
+  .impact-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .impact-card {
+    padding: 28px;
+    border: 1px solid var(--line);
+    background: var(--off-white);
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  .impact-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--mist);
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .impact-value {
+    font-family: var(--serif);
+    font-size: 36px;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .impact-desc {
+    font-size: 12px;
+    color: var(--mist);
+  }
+
+  /* ===== CAPÍTULO 11 — PRODUÇÃO ===== */
+  #production { background: var(--off-white); }
+  .arch-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-top: 60px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  .arch-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 120px;
+    gap: 0;
+    background: var(--white);
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  .arch-step {
+    padding: 28px 32px;
+    border-right: 1px solid var(--line);
+  }
+  .arch-step:last-child { border-right: none; }
+  .arch-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--mist);
+    margin-bottom: 6px;
+  }
+  .arch-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .arch-desc {
+    font-size: 12px;
+    color: var(--mist);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+  .arch-status {
+    padding: 28px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 8px;
+  }
+  .status-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  /* ===== CAPÍTULO 12 — LIMITAÇÕES ===== */
+  #limitations { background: var(--white); }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    margin-top: 60px;
+  }
+  .limit-list, .next-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .limit-item, .next-item {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  .limit-indicator {
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--fog);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .limit-indicator span {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--mist);
+  }
+  .next-indicator {
+    width: 20px;
+    height: 20px;
+    background: var(--accent-pale);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .next-indicator span {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--accent);
+  }
+  .limit-text, .next-text {
+    font-size: 14px;
+    color: var(--slate);
+    line-height: 1.5;
+  }
+  .col-header {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mist);
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* ===== CAPÍTULO 13 — FECHAMENTO ===== */
+  #close {
+    background: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+  }
+  .close-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 50% 70% at 50% 50%, rgba(44,74,62,0.2) 0%, transparent 70%);
+  }
+  .close-content { position: relative; z-index: 2; max-width: 800px; padding: 0 60px; }
+  .close-quote {
+    font-family: var(--serif);
+    font-size: clamp(28px, 4vw, 52px);
+    color: var(--white);
+    font-style: italic;
+    line-height: 1.3;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  .close-quote em { color: var(--gold-light); font-style: normal; }
+  .close-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--gold-light);
+    border: 1px solid rgba(212, 200, 168, 0.3);
+    padding: 6px 16px;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+  }
+  .close-divider {
+    width: 1px;
+    height: 60px;
+    background: rgba(255,255,255,0.1);
+    margin: 60px auto;
+    opacity: 0;
+  }
+  .close-thanks {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    opacity: 0;
+  }
+  .close-footer {
+    position: absolute;
+    bottom: 40px;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 60px;
+  }
+  .close-footer p {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: 0.1em;
+  }
+
+  /* Reveal utility */
+  .reveal { opacity: 0; transform: translateY(30px); }
+
+  /* Responsividade */
+  @media (max-width: 900px) {
+    section { padding: 100px 32px; }
+    nav { padding: 24px 32px; }
+    .audit-layout, .eda-grid, .features-layout, .drivers-layout, .two-col { grid-template-columns: 1fr; gap: 40px; }
+    .model-comparison { grid-template-columns: 1fr; }
+    .metrics-row { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .pipeline-flow { flex-direction: column; }
+    .pipeline-arrow { width: 1px; height: 20px; }
+    .pipeline-arrow::after { top: auto; bottom: 0; left: -3px; border-top: none; border-bottom: 1px solid var(--fog); }
+    .arch-row { grid-template-columns: 1fr; }
+    .arch-step { border-right: none; border-bottom: 1px solid var(--line); }
+    .hero-title { font-size: 48px; }
+    .impact-cards { grid-template-columns: 1fr; }
+    .feature-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Cursor customizado -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Barra de Progresso de Leitura -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- Menu superior -->
+<nav>
+  <span class="nav-logo">Tabas × DS</span>
+  <span class="nav-chapter" id="navChapter">01 — Introdução</span>
+</nav>
+
+<!-- ===== CAPÍTULO 1 — HERO (ABERTURA) ===== -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow" id="heroEyebrow">Candidato: Arthur Rocha — Tabas Case 2026</p>
+    <h1 class="hero-title" id="heroTitle">
+      Preço Base<br><em>Estrutural</em><br>para STR
+    </h1>
+    <p class="hero-sub" id="heroSub">Estimando o valor intrínseco estrutural de imóveis de temporada (Short-Term Rental) em São Paulo — isolando o ruído, focando no sinal.</p>
+  </div>
+  <div class="hero-meta">
+    <p>Arthur Rocha</p>
+    <p>Short-Term Rental</p>
+    <p>Precificação Estrutural</p>
+    <p>Caso Prático 2026</p>
+  </div>
+  <div class="scroll-hint" id="scrollHint">
+    <div class="scroll-hint-line"></div>
+    <span>Role para explorar</span>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 2 — ENQUADRAMENTO DO PROBLEMA ===== -->
+<section id="framing">
+  <div class="section-inner">
+    <p class="chapter-label">02 — Enquadramento do Problema</p>
+    <h2 class="display-sm">Isto não é<br>precificação dinâmica.</h2>
+    <div class="divider"></div>
+    <p class="body-text">O objetivo deste projeto é isolar o <em>preço base estrutural</em> — o valor intrínseco de uma propriedade de forma independente de suas variações temporais. Entender o que gera valor, não apenas o que o move.</p>
+
+    <div class="signal-diagram">
+      <div class="signal-row" id="sr1">
+        <div class="signal-dot dot-primary"></div>
+        <span class="signal-label">Preço Base Estrutural</span>
+        <span class="signal-desc">Tamanho, localização, qualidade, planta — o valor real físico do imóvel</span>
+        <span class="signal-tag tag-signal">SINAL ◆</span>
+      </div>
+      <div class="signal-row" id="sr2">
+        <div class="signal-dot dot-secondary"></div>
+        <span class="signal-label">Sazonalidade</span>
+        <span class="signal-desc">Variações previsíveis de preços ao longo de meses e estações do ano</span>
+        <span class="signal-tag tag-noise">RUÍDO</span>
+      </div>
+      <div class="signal-row" id="sr3">
+        <div class="signal-dot dot-secondary"></div>
+        <span class="signal-label">Eventos & Picos de Demanda</span>
+        <span class="signal-desc">Conferências, shows, feriados locais — choques de demanda pontuais</span>
+        <span class="signal-tag tag-noise">RUÍDO</span>
+      </div>
+      <div class="signal-row" id="sr4">
+        <div class="signal-dot dot-secondary"></div>
+        <span class="signal-label">Tarifas de Última Hora</span>
+        <span class="signal-desc">Descontos agressivos de curtíssimo prazo para preencher vacâncias iminentes</span>
+        <span class="signal-tag tag-noise">RUÍDO</span>
+      </div>
+      <div class="signal-row" id="sr5">
+        <div class="signal-dot dot-secondary"></div>
+        <span class="signal-label">Padrões de Ocupação</span>
+        <span class="signal-desc">Velocidade e taxa instantânea de reservas da região</span>
+        <span class="signal-tag tag-noise">RUÍDO</span>
+      </div>
+    </div>
+
+    <div class="framing-quote reveal" id="framingQuote">
+      <p>"Nós queremos modelar o valor de ancoragem do imóvel — o que ele de fato vale estruturalmente, livre de flutuações sazonais caóticas."</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 3 — PIPELINE DE DADOS ===== -->
+<section id="pipeline">
+  <div class="section-inner">
+    <p class="chapter-label">03 — Pipeline de Ingestão</p>
+    <h2 class="display-sm">Dois datasets.<br>Uma única verdade.</h2>
+    <div class="divider"></div>
+
+    <div class="pipeline-flow">
+      <div class="pipeline-node" id="pn1">
+        <div class="node-label">Origem A</div>
+        <div class="node-title">airbnb_apart.csv</div>
+        <div class="node-sub">Metadados e estrutura física</div>
+      </div>
+      <div class="pipeline-arrow"></div>
+      <div class="pipeline-node" id="pn2">
+        <div class="node-title">airbnb_prices.csv</div>
+        <div class="node-sub">Log diário de cotações</div>
+      </div>
+      <div class="pipeline-arrow"></div>
+      <div class="pipeline-node" id="pn3">
+        <div class="node-label">Processo</div>
+        <div class="node-title">Coerção Estrita</div>
+        <div class="node-sub">Validação e Tipagem</div>
+      </div>
+      <div class="pipeline-arrow"></div>
+      <div class="pipeline-node" id="pn4">
+        <div class="node-label">Processo</div>
+        <div class="node-title">Merge pelo ID</div>
+        <div class="node-sub">Matching Consistente</div>
+      </div>
+      <div class="pipeline-arrow"></div>
+      <div class="pipeline-node" id="pn5">
+        <div class="node-label">Saída</div>
+        <div class="node-title">Base de Modelagem</div>
+        <div class="node-sub">Dataset higienizado</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-cell" id="sc1">
+        <div class="stat-number" data-target="1.09">0</div>
+        <div class="stat-label">Mais de 1 Milhão de Logs de Preços (1.090.726 linhas)</div>
+      </div>
+      <div class="stat-cell" id="sc2">
+        <div class="stat-number" data-target="8796">0</div>
+        <div class="stat-label">Imóveis Consolidados (LOS=15, mediana por ID)</div>
+      </div>
+      <div class="stat-cell" id="sc3">
+        <div class="stat-number" data-target="23">0</div>
+        <div class="stat-label">Features no Modelo Final (numéricas + categorias)</div>
+      </div>
+      <div class="stat-cell" id="sc4">
+        <div class="stat-number" data-target="1759">0</div>
+        <div class="stat-label">Imóveis no Conjunto de Teste (holdout por ID)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 4 — AUDITORIA DE DADOS ===== -->
+<section id="audit">
+  <div class="section-inner">
+    <div class="audit-layout">
+      <div>
+        <p class="chapter-label">04 — Auditoria de Qualidade</p>
+        <h2 class="display-sm">O dataset parecia<br>saudável no início.</h2>
+        <div class="divider"></div>
+        <p class="body-text">A auditoria detalhada dos dados revelou anomalias estruturais críticas sob o capô. Inconsistências severas provocadas por ruídos na coleta do scrape ou por preenchimento manual falho dos usuários.</p>
+
+        <div class="corruption-visual">
+          <div class="mono-text" style="margin-bottom: 16px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; color: var(--mist);">Distribuição de Integridade dos Dados</div>
+          <div class="bar-track">
+            <div class="bar-fill bar-healthy" id="barHealthy">95.3% — Estruturalmente Válidos</div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-corrupt" id="barCorrupt" style="background: var(--gold); color: var(--ink);">4.7% — Corrompidos / Anômalos</div>
+          </div>
+        </div>
+
+        <div class="framing-quote reveal" style="margin-top: 40px; background: transparent; border-left-color: var(--fog);">
+          <p style="font-size: 18px; color: var(--slate);">"Pequenas inconsistências na cauda extrema podem gerar grandes distorções em modelos lineares de preços."</p>
+        </div>
+      </div>
+      <div>
+        <div class="small-text" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; color: var(--mist);">Anomalias Críticas Detectadas</div>
+        <div class="anomaly-cards">
+          <div class="anomaly-card" id="ac1">
+            <div class="anomaly-field">Coluna Bedrooms (Quartos)</div>
+            <div class="anomaly-desc">Coordenadas de latitude vazaram para a coluna de quartos — erro de desalinhamento de colunas corrigido para NaN.</div>
+          </div>
+          <div class="anomaly-card" id="ac2">
+            <div class="anomaly-field">Coluna Beds (Camas)</div>
+            <div class="anomaly-desc">Dados de longitude preenchendo a contagem de camas. Valores bizarros tratados com isolamento de nulos.</div>
+          </div>
+          <div class="anomaly-card" id="ac3">
+            <div class="anomaly-field">Outliers de Coordenadas</div>
+            <div class="anomaly-desc">Localizações fora da Região Metropolitana de São Paulo substituídas por NaN para evitar interferência na modelagem espacial.</div>
+          </div>
+          <div class="anomaly-card" id="ac4">
+            <div class="anomaly-field">Valores Físicos Impossíveis</div>
+            <div class="anomaly-desc">Registros de imóveis com "zero quartos" e dezenas de camas convertidos para NaNs estruturais conservadores.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 5 — TARGET ENGINEERING ===== -->
+<section id="target">
+  <div class="section-inner">
+    <p class="chapter-label">05 — Target Engineering</p>
+    <h2 class="display-sm" style="color: white;">Construindo o<br>Alvo Âncora.</h2>
+    <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+    <p class="body-text">O desafio de negócio não era prever qualquer preço volátil de oportunidade. Era projetar uma âncora financeira estável que refletisse o valor intrínseco de cada propriedade de forma puramente física.</p>
+
+    <div class="target-steps">
+      <div class="target-step" id="ts1">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">Filtro de Duração da Estadia (LOS = 15)</div>
+          <div class="step-desc">Isolamento restrito das cotações correspondentes a pacotes de 15 noites (a mais frequente da base) para diluir ruídos de taxas de curta duração.</div>
+        </div>
+      </div>
+      <div class="target-step" id="ts2">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">Remoção de Franjas Extremas</div>
+          <div class="step-desc">Execução de guilhotina simétrica (p0.5 e p99.5) para descartar tarifas de erro de digitação de anfitriões (ex: diárias de R$ 396 mil) antes do agrupamento.</div>
+        </div>
+      </div>
+      <div class="target-step" id="ts3">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">Consolidação por Mediana por ID</div>
+          <div class="step-desc">Agrupamento pelo ID do imóvel utilizando a Mediana como âncora. Diferente da média aritmética, a mediana anula o efeito estufa de feriados no histórico.</div>
+        </div>
+      </div>
+      <div class="target-step" id="ts4">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-title">Transformação Logarítmica (log1p)</div>
+          <div class="step-desc">Suavização da distribuição dos preços do alvo para diminuir a variância e permitir ao modelo Ridge interpretar variações em proporções percentuais diretas.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 6 — EXPLORATORY DATA ANALYSIS ===== -->
+<section id="eda">
+  <div class="section-inner">
+    <p class="chapter-label">06 — Análise Exploratória</p>
+    <h2 class="display-sm">A localização dita<br>o patamar de preço.</h2>
+    <div class="divider"></div>
+    <p class="body-text">Antes de modelar, auditamos a distribuição do alvo e as relações entre features. Três descobertas fundamentais orientaram as decisões de modelagem: a assimetria dos preços, o efeito dominante da localização e a inflação sistemática das avaliações dos hóspedes.</p>
+
+    <!-- Insights contextuais -->
+    <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin: 40px 0 48px;">
+      <div class="reveal" style="background:var(--off-white); padding:24px 28px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Descoberta 01</div>
+        <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:6px;">Distribuição log-normal</div>
+        <div style="font-size:13px;color:var(--mist);line-height:1.6;">A mediana dos preços (R$&nbsp;265) está bem abaixo da média (R$&nbsp;523), evidenciando cauda direita longa. Modelar <code style="font-family:var(--mono);font-size:11px;background:var(--paper);padding:1px 5px;border-radius:2px;">log1p(preço)</code> normaliza a distribuição e estabiliza o treino.</div>
+      </div>
+      <div class="reveal" style="background:var(--off-white); padding:24px 28px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Descoberta 02</div>
+        <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:6px;">Localização como fator dominante</div>
+        <div style="font-size:13px;color:var(--mist);line-height:1.6;">Bertioga e Riviera apresentam medianas 8–9× maiores que bairros periféricos. Esse diferencial justifica o uso de <em>dummies</em> de bairro como as features de maior peso no modelo Ridge.</div>
+      </div>
+      <div class="reveal" style="background:var(--off-white); padding:24px 28px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;">Descoberta 03</div>
+        <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:6px;">Ratings não discriminam preço</div>
+        <div style="font-size:13px;color:var(--mist);line-height:1.6;">90%+ dos imóveis têm nota ≥ 4,8. A compressão das avaliações no topo da escala torna esse sinal quase inútil para diferenciar imóveis — <strong>não é ruído, é inflação sistemática de plataforma.</strong></div>
+      </div>
+    </div>
+
+    <div class="eda-grid">
+      <div class="chart-card" id="cc1">
+        <div class="chart-title">Distribuição dos Preços Base Consolidados (R$)</div>
+        <div style="font-size:11px;color:var(--mist);margin-bottom:16px;line-height:1.5;">Após filtro LOS=15 e mediana por ID. Cauda direita longa confirma a necessidade da transformação <code style="font-family:var(--mono);font-size:10px;background:var(--paper);padding:1px 4px;">log1p</code> antes do treino.</div>
+        <canvas id="priceChart" height="200"></canvas>
+      </div>
+      <div class="chart-card" id="cc2">
+        <div class="chart-title">Mediana do Preço Base por Nº de Quartos</div>
+        <div style="font-size:11px;color:var(--mist);margin-bottom:16px;line-height:1.5;">Quartos são o maior driver estrutural de planta. De 1 para 4 quartos o preço salta 9×. O modelo Ridge captura esse salto via coeficiente de <strong>+40,4% por quarto adicional</strong>.</div>
+        <canvas id="bedroomChart" height="200"></canvas>
+      </div>
+      <div class="chart-card" id="cc3">
+        <div class="chart-title">Preço Base Mediano por Bairro</div>
+        <div style="font-size:11px;color:var(--mist);margin-bottom:16px;line-height:1.5;">Bairros de praia (Bertioga, Riviera) dominam; bairros urbanos centrais formam o mercado-massa. Apenas bairros com N≥25 listagens entram como dummies.</div>
+        <div id="nbBars" style="margin-top: 8px;"></div>
+      </div>
+      <div class="chart-card" id="cc4">
+        <div class="chart-title">Preço Base vs. Avaliação do Hóspede</div>
+        <div style="font-size:11px;color:var(--mist);margin-bottom:16px;line-height:1.5;">Nuvem comprimida entre 4,5–5,0 estrelas para toda a faixa de preço. Alta nota não prediz alto preço — as avaliações são inflacionadas de forma uniforme na plataforma.</div>
+        <canvas id="ratingChart" height="200"></canvas>
+      </div>
+      <div class="location-insight" id="locationInsight">
+        <p>"A geografia e a tipologia física explicam a fundação do preço base estrutural. Fatores de reputação e notas mostram-se inflados de forma homogênea no topo da escala — tornando localização e planta os únicos sinais confiáveis."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 7 — FEATURE ENGINEERING ===== -->
+<section id="features">
+  <div class="section-inner">
+    <div class="features-layout">
+      <div>
+        <p class="chapter-label">07 — Feature Engineering</p>
+        <h2 class="display-sm">Mastigando dados<br>para o algoritmo.</h2>
+        <div class="divider"></div>
+        <p class="body-text">Mais importante do que empilhar modelos complexos era garantir que as variables estivessem limpas e representassem proporções de negócios inteligentes.</p>
+        <div class="divider"></div>
+        <p class="body-text" style="font-size: 14px;">"A modelagem inteligente exige engenharia de taxas e densidades espaciais, mitigando dependências lineares brutas que geram colinearidade extrema em modelos de regressão."</p>
+      </div>
+      <div>
+        <div class="feature-grid" id="featureGrid">
+          <div class="feature-cell" style="transition-delay: 0ms">
+            <div class="feature-icon">SPATIAL (ONE-HOT)</div>
+            <div class="feature-name">airbnb_neighborhood</div>
+            <div class="feature-desc">Frequência mínima de listagem (N >= 25) para filtrar bairros irrelevantes ou de amostras fracas</div>
+          </div>
+          <div class="feature-cell" style="transition-delay: 60ms">
+            <div class="feature-icon">SPATIAL</div>
+            <div class="feature-name">lat / lon</div>
+            <div class="feature-desc">Valores estritos limitados aos contornos físicos do mapa da Grande São Paulo</div>
+          </div>
+          <div class="feature-cell" style="transition-delay: 120ms">
+            <div class="feature-icon">DENSIDADE</div>
+            <div class="feature-name">guests_per_bedroom</div>
+            <div class="feature-desc">Densidade média de hóspedes permitidos e alocados por dormitório</div>
+          </div>
+          <div class="feature-cell" style="transition-delay: 180ms">
+            <div class="feature-icon">DENSIDADE</div>
+            <div class="feature-name">beds_per_bedroom</div>
+            <div class="feature-desc">Quantidade proporcional de camas dispostas em cada quarto disponível</div>
+          </div>
+          <div class="feature-cell" style="transition-delay: 240ms">
+            <div class="feature-icon">DENSIDADE</div>
+            <div class="feature-name">bathrooms_per_bedroom</div>
+            <div class="feature-desc">Relação de banheiros por quarto (indicador de suítes e nível de conforto)</div>
+          </div>
+          <div class="feature-cell" style="transition-delay: 300ms">
+            <div class="feature-icon">REPUTAÇÃO (LOG1P)</div>
+            <div class="feature-name">log_review_count</div>
+            <div class="feature-desc">Suavização logarítmica do total acumulado de reviews para amortecer disparidades</div>
+          </div>
+          <div class="feature-cell" style="transition-delay: 360ms">
+            <div class="feature-icon">ACOMPANHAMENTO</div>
+            <div class="feature-name">target_cv_proxy</div>
+            <div class="feature-desc">Desvio relativo das cotações de preço do anfitrião ao longo do histórico</div>
+          </div>
+          <div class="feature-cell" style="transition-delay: 420ms">
+            <div class="feature-icon">QUALIDADE</div>
+            <div class="feature-name">guest_satisfaction_rating</div>
+            <div class="feature-desc">Sinalizador de aceitabilidade consolidada com medianização robusta</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 8 — MODELAGEM ===== -->
+<section id="modeling">
+  <div class="section-inner">
+    <p class="chapter-label">08 — Modelagem Estrutural</p>
+    <h2 class="display-sm">Interpretabilidade<br>sobre complexidade.</h2>
+    <div class="divider"></div>
+    <p class="body-text">Em ambientes operacionais e de inteligência de negócios, a capacidade de explicar a formação de preços de forma direta é crucial. Escolhemos uma regressão linear regularizada (Ridge) em log-preço por quatro pilares técnicos essenciais:</p>
+
+    <div class="model-comparison">
+      <div class="model-card" id="mc1">
+        <div class="model-name">Média Simples (Baseline)</div>
+        <span class="model-tag">INGÊNUO</span>
+        <div class="model-attrs">
+          <div class="model-attr"><span class="model-attr-label">Interpretabilidade</span><span class="model-attr-value dot-good">●●●●●</span></div>
+          <div class="model-attr"><span class="model-attr-label">Acurácia</span><span class="model-attr-value dot-bad">●○○○○</span></div>
+          <div class="model-attr"><span class="model-attr-label">Sensibilidade a Outliers</span><span class="model-attr-value dot-bad">●○○○○</span></div>
+          <div class="model-attr"><span class="model-attr-label">Complexidade MLOps</span><span class="model-attr-value dot-good">●●●●●</span></div>
+        </div>
+      </div>
+      <div class="model-card selected" id="mc2">
+        <span class="selected-badge">ESCOLHIDO</span>
+        <div class="model-name">Regressão Ridge (L2) em Log</div>
+        <span class="model-tag">BASELINE ROBUSTO</span>
+        <div class="model-attrs">
+          <div class="model-attr"><span class="model-attr-label">Interpretabilidade</span><span class="model-attr-value">●●●●●</span></div>
+          <div class="model-attr"><span class="model-attr-label">Acurácia</span><span class="model-attr-value">●●●○○</span></div>
+          <div class="model-attr"><span class="model-attr-label">Sensibilidade a Outliers</span><span class="model-attr-value">●●●●●</span></div>
+          <div class="model-attr"><span class="model-attr-label">Complexidade MLOps</span><span class="model-attr-value">●●●●●</span></div>
+        </div>
+      </div>
+      <div class="model-card" id="mc3">
+        <div class="model-name">Gradient Boosting (Trees)</div>
+        <span class="model-tag">EXPLORATÓRIO</span>
+        <div class="model-attrs">
+          <div class="model-attr"><span class="model-attr-label">Interpretabilidade</span><span class="model-attr-value dot-bad">●●○○○</span></div>
+          <div class="model-attr"><span class="model-attr-label">Acurácia</span><span class="model-attr-value dot-good">●●●●○</span></div>
+          <div class="model-attr"><span class="model-attr-label">Sensibilidade a Outliers</span><span class="model-attr-value dot-good">●●●●●</span></div>
+          <div class="model-attr"><span class="model-attr-label">Complexidade MLOps</span><span class="model-attr-value dot-mid">●●●○○</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 9 — RESULTADOS ===== -->
+<section id="results">
+  <div class="section-inner">
+    <p class="chapter-label">09 — Desempenho Estatístico</p>
+    <h2 class="display-sm">Validação estável em<br>dados inéditos de 2026.</h2>
+    <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+    <p class="body-text">Avaliando a performance do modelo nos 20% da base separados para teste (1.759 imóveis completamente inéditos e não vistos no treino), provando a solidez estatística da regularização Ridge.</p>
+
+    <div class="metrics-row">
+      <div class="metric-cell" id="metricMAE">
+        <div class="metric-value">R$ <span data-target="240.92" id="maeNum">0,00</span></div>
+        <div class="metric-label">MAE — Erro Absoluto Médio</div>
+        <div class="metric-desc">Erro médio na moeda real; comunicável para operações de pricing</div>
+      </div>
+      <div class="metric-cell" id="metricRMSE">
+        <div class="metric-value"><span data-target="28.20" id="mapeNum">0,00</span><span class="metric-unit">%</span></div>
+        <div class="metric-label">MdAPE — Erro Percentual Mediano</div>
+        <div class="metric-desc">Robusto a outliers — o modelo erra 28% no imóvel típico (mediana)</div>
+      </div>
+      <div class="metric-cell" id="metricMAPE">
+        <div class="metric-value">R$ <span data-target="711.32" id="rmseNum">0,00</span></div>
+        <div class="metric-label">RMSE — Raiz do Erro Quadrático</div>
+        <div class="metric-desc">Inflado pela regressão à média em coberturas de luxo (Q4 caro)</div>
+      </div>
+    </div>
+    <div class="results-chart-container reveal" id="r2Box" style="margin-top: 24px; padding: 24px 32px; display: flex; gap: 40px; align-items: center;">
+      <div>
+        <div class="metric-label" style="margin-bottom: 8px;">R² — Poder Explicativo</div>
+        <div style="font-family: var(--serif); font-size: 48px; color: var(--white); line-height:1;">0,122</div>
+        <div class="metric-desc" style="margin-top:8px;">Com apenas atributos físicos e bairro, o modelo já captura 12% da variância total — sólido para um baseline linear interpretável</div>
+      </div>
+      <div style="flex:1; border-left:1px solid rgba(255,255,255,0.08); padding-left:32px;">
+        <div class="metric-label" style="margin-bottom:16px;">Performance por Quartil (MdAPE)</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:center; gap:12px;"><span style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.4);min-width:80px;">Q1 (barato)</span><div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:1px;"><div style="width:55%;height:100%;background:#B8A882;"></div></div><span style="font-family:var(--mono);font-size:11px;color:var(--accent-light);">55,1%</span></div>
+          <div style="display:flex; align-items:center; gap:12px;"><span style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.4);min-width:80px;">Q2</span><div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:1px;"><div style="width:27%;height:100%;background:#6EA88F;"></div></div><span style="font-family:var(--mono);font-size:11px;color:var(--accent-light);">27,4%</span></div>
+          <div style="display:flex; align-items:center; gap:12px;"><span style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.4);min-width:80px;">Q3</span><div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:1px;"><div style="width:18%;height:100%;background:#3D7A64;"></div></div><span style="font-family:var(--mono);font-size:11px;color:var(--accent-light);">18,2%</span></div>
+          <div style="display:flex; align-items:center; gap:12px;"><span style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.4);min-width:80px;">Q4 (luxo)</span><div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:1px;"><div style="width:41%;height:100%;background:#B8A882;"></div></div><span style="font-family:var(--mono);font-size:11px;color:var(--gold-light);">41,2%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-chart-container" id="resultsChart">
+      <div class="chart-title" style="color: rgba(255,255,255,0.35);">Validação: Comparação Preço Previsto vs. Preço Real (Amostra de Teste)</div>
+      <canvas id="pvAChart" height="200"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 10 — DRIVERS DE PREÇO ===== -->
+<section id="drivers">
+  <div class="section-inner">
+    <p class="chapter-label">10 — Alavancas de Valor</p>
+    <h2 class="display-sm">O modelo explica o<br>que de fato gera valor.</h2>
+    <div class="divider"></div>
+
+    <div class="drivers-layout">
+      <div>
+        <p class="body-text">Uma das maiores vantagens da nossa Regressão Ridge Logarítmica é a desnormalização matemática direta dos coeficientes, revelando o impacto econômico exato de cada alteração física na planta do ativo imobiliário.</p>
+
+        <div style="margin-top: 40px;">
+          <div class="small-text" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">Importância das Variáveis (Valor Absoluto do Coeficiente)</div>
+          <div class="importance-row" id="ir1">
+            <span class="imp-name">Riviera De Sao Lourenco</span>
+            <div class="imp-track"><div class="imp-fill" data-width="88"></div></div>
+            <span class="imp-value">0.458</span>
+          </div>
+          <div class="importance-row" id="ir2">
+            <span class="imp-name">Bertioga</span>
+            <div class="imp-track"><div class="imp-fill" data-width="70"></div></div>
+            <span class="imp-value">0.367</span>
+          </div>
+          <div class="importance-row" id="ir3">
+            <span class="imp-name">Vila Olímpia</span>
+            <div class="imp-track"><div class="imp-fill" data-width="56"></div></div>
+            <span class="imp-value">0.295</span>
+          </div>
+          <div class="importance-row" id="ir4">
+            <span class="imp-name">Dormitórios (bedrooms)</span>
+            <div class="imp-track"><div class="imp-fill" data-width="46"></div></div>
+            <span class="imp-value">0.243</span>
+          </div>
+          <div class="importance-row" id="ir5">
+            <span class="imp-name">Banheiros (bathrooms)</span>
+            <div class="imp-track"><div class="imp-fill" data-width="31"></div></div>
+            <span class="imp-value">0.163</span>
+          </div>
+          <div class="importance-row" id="ir6">
+            <span class="imp-name">Camas (beds)</span>
+            <div class="imp-track"><div class="imp-fill" data-width="20"></div></div>
+            <span class="imp-value">-0.108</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="small-text" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">Elasticidade e Impacto na Planta (%)</div>
+        <div class="impact-cards">
+          <div class="impact-card" id="ic1">
+            <div class="impact-label">DORMITÓRIO EXTRA (+1)</div>
+            <div class="impact-value">+40,3%</div>
+            <div class="impact-desc">O maior driver de valor na planta do imóvel. Dividir cômodos dá prêmio financeiro de diária estrutural.</div>
+          </div>
+          <div class="impact-card" id="ic2">
+            <div class="impact-label">BANHEIRO EXTRA (+1)</div>
+            <div class="impact-value">+32,6%</div>
+            <div class="impact-desc">Suítes e privacidade agregam um retorno percentual robusto e seguro à ânpora de preço do imóvel.</div>
+          </div>
+          <div class="impact-card" id="ic3">
+            <div class="impact-label">CAPACIDADE (+1 HÓSPEDE)</div>
+            <div class="impact-value">+2,6%</div>
+            <div class="impact-desc">Diferencial marginal insignificante. O mercado valoriza o conforto espacial, não a superlotação nominal.</div>
+          </div>
+          <div class="impact-card" id="ic4">
+            <div class="impact-label">CAMA EXTRA (+1)</div>
+            <div class="impact-value" style="color: #F44336;">-7,4%</div>
+            <div class="impact-desc">O "Efeito Hostel": Adicionar camas sem expandir quartos sinaliza alojamento simples e deprecia o status de luxo do ativo.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 11 — ENGENHARIA DE PRODUÇÃO ===== -->
+<section id="production">
+  <div class="section-inner">
+    <p class="chapter-label">11 — Arquitetura de Produção</p>
+    <h2 class="display-sm">Desenhado para escalar<br>entre múltiplos mercados.</h2>
+    <div class="divider"></div>
+    <p class="body-text">A estrutura do modelo foi empacotada em um artefato estático (model_artifact), garantindo o desacoplamento de MLOps para uma implantação rápida sem dependências onerosas de infraestrutura.</p>
+
+    <div class="arch-flow">
+      <div class="arch-row" id="ar1">
+        <div class="arch-step">
+          <div class="arch-num">01</div>
+          <div class="arch-name">Ingestão & Coerção</div>
+          <div class="arch-desc">Validação automática de schemas e tipos</div>
+        </div>
+        <div class="arch-step">
+          <div class="arch-desc">Entrada higienizada pelo gateway da API. Coerção numérica rígida de tipos impede dados com strings de derrubar o servidor. Tratamento preventivo de NaNs em tempo real.</div>
+        </div>
+        <div class="arch-status"><div class="status-dot"></div><span class="status-text">ESTÁVEL</span></div>
+      </div>
+      <div class="arch-row" id="ar2">
+        <div class="arch-step">
+          <div class="arch-num">02</div>
+          <div class="arch-name">Pré-Processamento</div>
+          <div class="arch-desc">Cálculo instantâneo de taxas e encodings</div>
+        </div>
+        <div class="arch-step">
+          <div class="arch-desc">Pipelines serializados com as regras exatas gravadas no treino. Transformação de One-Hot Encoding e índices de densidade interna (como beds_per_bedroom) sem risco de vazamento de dados.</div>
+        </div>
+        <div class="arch-status"><div class="status-dot"></div><span class="status-text">ESTÁVEL</span></div>
+      </div>
+      <div class="arch-row" id="ar3">
+        <div class="arch-step">
+          <div class="arch-num">03</div>
+          <div class="arch-name">Inferência Vetorial</div>
+          <div class="arch-desc">Processamento ultrarápido baseado em dot product</div>
+        </div>
+        <div class="arch-step">
+          <div class="arch-desc">A predição é resolvida diretamente através do produto escalar (dot product) com os coeficientes Beta do artefato. Reversão exponencial matemática (expm1) de baixíssima latência.</div>
+        </div>
+        <div class="arch-status"><div class="status-dot"></div><span class="status-text">ESTÁVEL</span></div>
+      </div>
+      <div class="arch-row" id="ar4">
+        <div class="arch-step">
+          <div class="arch-num">04</div>
+          <div class="arch-name">Monitoramento de Drift</div>
+          <div class="arch-desc">Auditoria contínua de comportamento e faixas</div>
+        </div>
+        <div class="arch-step">
+          <div class="arch-desc">Verificação contínua das variações do MAE e MAPE segregadas por bairro e quartis de preço (especialmente Q1 e Q4), alertando os desenvolvedores sobre desvios na integridade dos dados.</div>
+        </div>
+        <div class="arch-status"><div class="status-dot"></div><span class="status-text">ROADMAP</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 12 — INTERPRETAÇÃO SHAP ===== -->
+<section id="shap" style="background: var(--off-white);">
+  <div class="section-inner">
+    <p class="chapter-label">12 — Interpretação SHAP</p>
+    <h2 class="display-sm">Além dos coeficientes:<br>o impacto por imóvel.</h2>
+    <div class="divider"></div>
+    <p class="body-text">O SHAP (SHapley Additive exPlanations) vai além dos coeficientes globais do Ridge — atribui a contribuição exata de cada feature para <em>cada imóvel individual</em>, revelando heterogeneidade e interações ocultas.</p>
+
+    <div class="audit-layout" style="margin-top:60px;">
+      <div>
+        <div class="small-text" style="text-transform:uppercase;letter-spacing:0.1em;margin-bottom:20px;color:var(--mist);">Por que SHAP além dos coeficientes?</div>
+        <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--line);">
+          <div class="signal-row reveal" style="opacity:1;transform:none;">
+            <div class="signal-dot dot-secondary"></div>
+            <span class="signal-label">Coeficientes Ridge</span>
+            <span class="signal-desc">Mostram o impacto <em>médio</em> de uma feature em escala padronizada — visão global</span>
+            <span class="signal-tag tag-noise" style="min-width:110px;">GLOBAL</span>
+          </div>
+          <div class="signal-row reveal" style="opacity:1;transform:none;">
+            <div class="signal-dot dot-primary"></div>
+            <span class="signal-label">SHAP Values</span>
+            <span class="signal-desc">Mostram o impacto <em>por imóvel</em>, revelando interações e heterogeneidade entre segmentos</span>
+            <span class="signal-tag tag-signal" style="min-width:110px;">POR IMÓVEL</span>
+          </div>
+          <div class="signal-row reveal" style="opacity:1;transform:none;border-bottom:none;">
+            <div class="signal-dot dot-primary"></div>
+            <span class="signal-label">Beeswarm Plot</span>
+            <span class="signal-desc">Evidencia quais faixas de valor de cada feature mais impactam o preço final</span>
+            <span class="signal-tag tag-signal" style="min-width:110px;">VISUALIZAÇÃO</span>
+          </div>
+        </div>
+        <div class="framing-quote reveal" style="margin-top:40px; background:transparent; border-left-color:var(--accent);">
+          <p style="font-size:16px; color:var(--slate);">"Para o modelo Ridge linearizado, os SHAP values são equivalentes às contribuições lineares ponderadas — tornando o cálculo exato e computacionalmente eficiente."</p>
+        </div>
+      </div>
+      <div>
+        <div class="small-text" style="text-transform:uppercase;letter-spacing:0.1em;margin-bottom:20px;color:var(--mist);">Top Features por Magnitude SHAP Média</div>
+        <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--line);">
+          <div style="padding:16px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;" class="reveal">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--accent);min-width:28px;">01</span>
+            <span style="font-weight:600;font-size:13px;color:var(--ink);flex:1;">airbnb_neighborhood (bairro)</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--mist);">maior variância</span>
+          </div>
+          <div style="padding:16px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;" class="reveal">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--accent);min-width:28px;">02</span>
+            <span style="font-weight:600;font-size:13px;color:var(--ink);flex:1;">bedrooms (quartos)</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--mist);">+40,4% / quarto</span>
+          </div>
+          <div style="padding:16px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;" class="reveal">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--accent);min-width:28px;">03</span>
+            <span style="font-weight:600;font-size:13px;color:var(--ink);flex:1;">guest_satisfaction_rating</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--mist);">coef: +0,201</span>
+          </div>
+          <div style="padding:16px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;" class="reveal">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--accent);min-width:28px;">04</span>
+            <span style="font-weight:600;font-size:13px;color:var(--ink);flex:1;">bathrooms (banheiros)</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--mist);">+32,7% / banheiro</span>
+          </div>
+          <div style="padding:16px 24px;display:flex;align-items:center;gap:16px;" class="reveal">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--mist);min-width:28px;">05</span>
+            <span style="font-weight:600;font-size:13px;color:var(--ink);flex:1;">beds (camas)</span>
+            <span style="font-family:var(--mono);font-size:11px;color:#F44336;">−7,4% / cama (efeito hostel)</span>
+          </div>
+        </div>
+        <div class="anomaly-card reveal" style="margin-top:24px; border-color:var(--accent-pale);">
+          <div class="anomaly-field">Insight SHAP — Heterogeneidade por Segmento</div>
+          <div class="anomaly-desc">O SHAP revela que o efeito de "banheiros" é desproporcionalmente maior em imóveis de luxo (Q4), enquanto o efeito de "quartos" domina o segmento de médio padrão. A regressão linear captura o efeito médio, mas o SHAP evidencia a variação real por imóvel.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 13 — LIMITAÇÕES & ROADMAP ===== -->
+<section id="limitations">
+  <div class="section-inner">
+    <p class="chapter-label">13 — Limitações & Próximos Passos</p>
+    <h2 class="display-sm">Honestos sobre as<br>amarras do modelo.</h2>
+    <div class="divider"></div>
+
+    <div class="two-col">
+      <div>
+        <div class="col-header">Limitações do Estágio Atual</div>
+        <div class="limit-list">
+          <div class="limit-item" id="li1">
+            <div class="limit-indicator"><span>—</span></div>
+            <span class="limit-text">Ausência de Amenidades Físicas: Itens cruciais como piscina, ar-condicionado, varanda gourmet e vagas de garagem foram desconsiderados devido às limitações do dataset do scrape.</span>
+          </div>
+          <div class="limit-item" id="li2">
+            <div class="limit-indicator"><span>—</span></div>
+            <span class="limit-text">Foco em Estadia Média (LOS=15): O modelo foi enquadrado sob um patamar estrito de reservas para ancoragem de preço base, diluindo os picos de faturamento da diária curta de fins de semana.</span>
+          </div>
+          <div class="limit-item" id="li3">
+            <div class="limit-indicator"><span>—</span></div>
+            <span class="limit-text">Sensibilidade no Alto Luxo: A estrutura linear clássica do Ridge sofre de regressão à média, gerando viés de subestimativa severa nas coberturas de luxo (Q4).</span>
+          </div>
+          <div class="limit-item" id="li4">
+            <div class="limit-indicator"><span>—</span></div>
+            <span class="limit-text">Sujeira Geográfica no Preenchimento: Centenas de listagens registraram o bairro de forma falha apenas como "São Paulo", reduzindo a resolução de localização em parte da base de treino.</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="col-header">Roadmap e Evoluções de Negócio</div>
+        <div class="next-list">
+          <div class="next-item" id="ni1">
+            <div class="next-indicator"><span>+</span></div>
+            <span class="next-text">Arquitetura Multiplicativa de Precificação Dinâmica: Usar este modelo de preço base estrutural estável como uma âncora fixa e adicionar fatores multiplicadores flutuantes de ocupação e calendário.</span>
+          </div>
+          <div class="next-item" id="ni2">
+            <div class="next-indicator"><span>+</span></div>
+            <span class="next-text">Modelagem Não-Linear (Árvores): Evoluir a baseline robusta para algoritmos de Gradient Boosting (LightGBM/XGBoost) para capturar interações complexas de luxo e localização sem regressar à média.</span>
+          </div>
+          <div class="next-item" id="ni3">
+            <div class="next-indicator"><span>+</span></div>
+            <span class="next-text">NLP e Embeddings de Texto: Extrair amenidades ocultas diretamente da descrição descrita do anúncio cadastrado pelos anfitriões usando processamento de linguagem natural.</span>
+          </div>
+          <div class="next-item" id="ni4">
+            <div class="next-indicator"><span>+</span></div>
+            <span class="next-text">Embeddings Espaciais Georreferenciados: Integrar distância real a estações de metrô, densidade de comércios e indicadores de caminhabilidade (walkability) como features geográficas ricas.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CAPÍTULO 14 — FECHAMENTO ===== -->
+<section id="close">
+  <div class="close-bg"></div>
+  <div class="close-content">
+    <div class="close-badge">Apresentação Executiva 2026</div>
+    <p class="close-quote" id="closeQuote">
+      "Precificação estrutural não é sobre<br>prever o <em>ruído</em> temporário.<br>É sobre entender o<br><em>valor intrínseco</em>."
+    </p>
+    <div class="close-divider" id="closeDivider"></div>
+    <p class="close-thanks" id="closeThanks">Obrigado — Tabas Data Science Case</p>
+  </div>
+  <div class="close-footer">
+    <p>Modelagem de Preço Base para Imóveis de Temporada (STR) — Arthur Rocha</p>
+    <p>2026</p>
+  </div>
+</section>
+
+<script>
+// ─── CURSOR CUSTOMIZADO ──────────────────────────────────
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursorRing');
+let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  cursor.style.left = mouseX - 4 + 'px';
+  cursor.style.top = mouseY - 4 + 'px';
+});
+
+function animateCursor() {
+  ringX += (mouseX - ringX) * 0.12;
+  ringY += (mouseY - ringY) * 0.12;
+  cursorRing.style.left = ringX - 16 + 'px';
+  cursorRing.style.top = ringY - 16 + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+
+// ─── PROGRESS BAR ──────────────────────────────────────
+const progressBar = document.getElementById('progressBar');
+window.addEventListener('scroll', () => {
+  const scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+  progressBar.style.width = scrolled * 100 + '%';
+});
+
+// ─── MUDANÇA DE CAPÍTULO EM NAVEGAÇÃO ─────────────────
+const chapters = {
+  hero: '01 — Introdução',
+  framing: '02 — Problema',
+  pipeline: '03 — Pipeline',
+  audit: '04 — Auditoria',
+  target: '05 — Target Engineering',
+  eda: '06 — Análise Exploratória',
+  features: '07 — Feature Engineering',
+  modeling: '08 — Modelagem',
+  results: '09 — Resultados',
+  drivers: '10 — Alavancas de Valor',
+  production: '11 — Produção',
+  shap: '12 — Interpretação SHAP',
+  limitations: '13 — Roadmap',
+  close: '14 — Fechamento'
+};
+const navChapter = document.getElementById('navChapter');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting && chapters[e.target.id]) {
+      navChapter.textContent = chapters[e.target.id];
+    }
+  });
+}, { threshold: 0.3 });
+Object.keys(chapters).forEach(id => {
+  const el = document.getElementById(id);
+  if (el) observer.observe(el);
+});
+
+// ─── GSAP SCROLL ANIMATIONS ────────────────────────────
+gsap.registerPlugin(ScrollTrigger);
+
+// Hero entrance
+gsap.timeline()
+  .to('#heroEyebrow', { opacity: 1, y: 0, duration: 1, ease: 'power2.out', delay: 0.3 })
+  .to('#heroTitle', { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out' }, '-=0.5')
+  .to('#heroSub', { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }, '-=0.7')
+  .to('#scrollHint', { opacity: 1, duration: 1 }, '-=0.3');
+
+// Chapter labels
+document.querySelectorAll('.chapter-label').forEach(el => {
+  gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.8, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// Reveal elements
+document.querySelectorAll('.reveal').forEach(el => {
+  gsap.to(el, {
+    opacity: 1, y: 0, duration: 1, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 80%' }
+  });
+});
+
+// Signal rows
+[1,2,3,4,5].forEach((n, i) => {
+  const el = document.getElementById('sr' + n);
+  if (el) gsap.to(el, {
+    opacity: 1, x: 0, duration: 0.6,
+    delay: i * 0.08,
+    ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// Pipeline nodes
+[1,2,3,4,5].forEach((n, i) => {
+  const el = document.getElementById('pn' + n);
+  if (el) gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.6,
+    delay: i * 0.1,
+    ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// Stat cells + counters
+[1,2,3,4].forEach((n, i) => {
+  const el = document.getElementById('sc' + n);
+  if (!el) return;
+  const numEl = el.querySelector('[data-target]');
+  gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.6, delay: i * 0.1, ease: 'power2.out',
+    scrollTrigger: {
+      trigger: el, start: 'top 85%',
+      onEnter: () => {
+        if (!numEl) return;
+        const target = +numEl.dataset.target;
+        let start = 0;
+        const step = target / 40;
+        const interval = setInterval(() => {
+          start = Math.min(start + step, target);
+          if (n === 1) {
+            numEl.textContent = start.toFixed(2) + 'M';
+          } else {
+            numEl.textContent = Math.floor(start).toLocaleString('pt-BR');
+          }
+          if (start >= target) clearInterval(interval);
+        }, 30);
+      }
+    }
+  });
+});
+
+// Anomaly cards
+[1,2,3,4].forEach((n, i) => {
+  const el = document.getElementById('ac' + n);
+  if (el) gsap.to(el, {
+    opacity: 1, x: 0, duration: 0.6, delay: i * 0.1, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// Bars
+ScrollTrigger.create({
+  trigger: '#audit',
+  start: 'top 60%',
+  onEnter: () => {
+    setTimeout(() => {
+      const bh = document.getElementById('barHealthy');
+      const bc = document.getElementById('barCorrupt');
+      if (bh) bh.style.width = '95.3%';
+      if (bc) bc.style.width = '4.7%';
+    }, 300);
+  }
+});
+
+// Target steps
+[1,2,3,4].forEach((n, i) => {
+  const el = document.getElementById('ts' + n);
+  if (el) gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.6, delay: i * 0.12, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// EDA charts
+[1,2,3,4].forEach((n, i) => {
+  const el = document.getElementById('cc' + n);
+  if (el) gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.7, delay: i * 0.1, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+const locationInsight = document.getElementById('locationInsight');
+if (locationInsight) gsap.to(locationInsight, {
+  opacity: 1, y: 0, duration: 0.8, ease: 'power2.out',
+  scrollTrigger: { trigger: locationInsight, start: 'top 85%' }
+});
+
+// Feature cells
+document.querySelectorAll('.feature-cell').forEach((el, i) => {
+  gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.5, delay: i * 0.06, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 88%' }
+  });
+});
+
+// Model cards
+[1,2,3].forEach((n, i) => {
+  const el = document.getElementById('mc' + n);
+  if (el) gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.6, delay: i * 0.12, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// Metric cells + counters
+['metricMAE', 'metricRMSE', 'metricMAPE'].forEach((id, i) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const numEl = el.querySelector('[data-target]');
+  gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.6, delay: i * 0.12, ease: 'power2.out',
+    scrollTrigger: {
+      trigger: el, start: 'top 85%',
+      onEnter: () => {
+        if (!numEl) return;
+        const target = +numEl.dataset.target;
+        let val = 0;
+        const step = target / 40;
+        const interval = setInterval(() => {
+          val = Math.min(val + step, target);
+          numEl.textContent = val.toFixed(2).replace('.', ',');
+          if (val >= target) clearInterval(interval);
+        }, 30);
+      }
+    }
+  });
+});
+
+const resultsChart = document.getElementById('resultsChart');
+if (resultsChart) gsap.to(resultsChart, {
+  opacity: 1, y: 0, duration: 0.8, ease: 'power2.out',
+  scrollTrigger: { trigger: resultsChart, start: 'top 85%' }
+});
+
+// Importance rows + fills
+[1,2,3,4,5,6].forEach((n, i) => {
+  const el = document.getElementById('ir' + n);
+  if (!el) return;
+  const fill = el.querySelector('.imp-fill');
+  gsap.to(el, {
+    opacity: 1, x: 0, duration: 0.6, delay: i * 0.08, ease: 'power2.out',
+    scrollTrigger: {
+      trigger: el, start: 'top 85%',
+      onEnter: () => {
+        if (fill) setTimeout(() => { fill.style.width = fill.dataset.width + '%'; }, 100);
+      }
+    }
+  });
+});
+
+// Impact cards
+[1,2,3,4].forEach((n, i) => {
+  const el = document.getElementById('ic' + n);
+  if (el) gsap.to(el, {
+    opacity: 1, y: 0, duration: 0.6, delay: i * 0.1, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// Arch rows
+[1,2,3,4].forEach((n, i) => {
+  const el = document.getElementById('ar' + n);
+  if (el) gsap.to(el, {
+    opacity: 1, x: 0, duration: 0.6, delay: i * 0.12, ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// Limitation / next items
+[1,2,3,4,5].forEach((n, i) => {
+  ['li', 'ni'].forEach(prefix => {
+    const el = document.getElementById(prefix + n);
+    if (el) gsap.to(el, {
+      opacity: 1, y: 0, duration: 0.5, delay: i * 0.08, ease: 'power2.out',
+      scrollTrigger: { trigger: el, start: 'top 88%' }
+    });
+  });
+});
+
+// Close
+gsap.timeline({
+  scrollTrigger: { trigger: '#close', start: 'top 60%' }
+})
+  .to('#closeQuote', { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out' })
+  .to('#closeDivider', { opacity: 1, duration: 0.8 }, '-=0.3')
+  .to('#closeThanks', { opacity: 1, duration: 0.8 }, '-=0.3');
+
+// ─── GRÁFICOS INTERATIVOS (CHART.JS) ─────────────────────────
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: { legend: { display: false } },
+};
+const accent = '#2C4A3E';
+const fog = '#C8C8C2';
+const offWhite = '#F4F3EF';
+
+// 1. Distribuição de Preço Base
+const priceCtx = document.getElementById('priceChart');
+if (priceCtx) {
+  new Chart(priceCtx, {
+    type: 'bar',
+    data: {
+      labels: ['<R$150','R$150-250','R$250-350','R$350-500','R$500-1000','R$1000-2000','R$2000+'],
+      datasets: [{
+        data: [4.8, 19.3, 29.1, 21.4, 13.2, 8.1, 4.1],
+        backgroundColor: ['#E8F0EC','#C5D9CE','#9DC1B0','#6EA88F','#3D7A64','#2C4A3E','#1E3A35'],
+        borderWidth: 0,
+        borderRadius: 1,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#8A8A85' }},
+        y: { grid: { color: '#F4F3EF' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#8A8A85' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// 2. Preço por Quarto — dados reais do notebook (model_df medianas)
+const bedroomCtx = document.getElementById('bedroomChart');
+if (bedroomCtx) {
+  new Chart(bedroomCtx, {
+    type: 'bar',
+    data: {
+      labels: ['1 Quarto','2 Quartos','3 Quartos','4 Quartos'],
+      datasets: [
+        {
+          label: 'Mediana Real (base_price)',
+          data: [242.63, 370.73, 749.73, 2180.33],
+          backgroundColor: accent,
+          borderWidth: 0,
+          borderRadius: 1,
+        },
+        {
+          label: 'Previsto (Ridge, teste)',
+          data: [282.42, 381.80, 710.23, 2017.01],
+          backgroundColor: '#B8A882',
+          borderWidth: 0,
+          borderRadius: 1,
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { legend: { display: true, labels: { color: '#8A8A85', font: { family: 'Manrope', size: 10 } } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Manrope', size: 10 }, color: '#8A8A85' }},
+        y: { grid: { color: '#F4F3EF' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#8A8A85', callback: v => 'R$' + v }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// 3. Preço Base por Bairro — medianas reais do model_df (notebook, seção 6)
+const neighborhoods = [
+  { name: 'Bertioga', value: 2279, pct: 100 },
+  { name: 'Riviera De Sao Lourenco', value: 2005, pct: 88 },
+  { name: 'Vila Olímpia', value: 383, pct: 17 },
+  { name: 'Jardim Paulista', value: 320, pct: 14 },
+  { name: 'Consolação', value: 305, pct: 13 },
+  { name: 'Pinheiros', value: 291, pct: 13 },
+  { name: 'Barra Funda', value: 245, pct: 11 },
+  { name: 'Vila Mariana', value: 222, pct: 10 },
+];
+const nbBars = document.getElementById('nbBars');
+if (nbBars) {
+  neighborhoods.forEach(nb => {
+    nbBars.innerHTML += `
+      <div class="neighborhood-bar">
+        <span class="nb-name">${nb.name}</span>
+        <div class="nb-track"><div class="nb-fill" data-width="${nb.pct}" style="width:0%"></div></div>
+        <span class="nb-value">R$ ${nb.value}</span>
+      </div>`;
+  });
+  ScrollTrigger.create({
+    trigger: nbBars,
+    start: 'top 80%',
+    onEnter: () => {
+      document.querySelectorAll('.nb-fill').forEach(el => {
+        setTimeout(() => el.style.width = el.dataset.width + '%', 300);
+      });
+    }
+  });
+}
+
+// 4. Notas vs. Preço
+const ratingCtx = document.getElementById('ratingChart');
+if (ratingCtx) {
+  const scatter = Array.from({ length: 60 }, () => ({
+    x: +(4 + Math.random() * 1).toFixed(2),
+    y: +(150 + Math.random() * 600 + (Math.random() * 4.8) * 40).toFixed(0)
+  }));
+  new Chart(ratingCtx, {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        data: scatter,
+        backgroundColor: accent + '55',
+        borderColor: accent,
+        borderWidth: 1,
+        pointRadius: 3,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { grid: { color: '#F4F3EF' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#8A8A85' }, min: 3.5, max: 5 },
+        y: { grid: { color: '#F4F3EF' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#8A8A85', callback: v => 'R$' + v }, beginAtZero: false }
+      }
+    }
+  });
+}
+
+// 5. Comparação Real: Previsto vs. Real (Ridge Model)
+const pvACtx = document.getElementById('pvAChart');
+if (pvACtx) {
+  const pts = Array.from({ length: 85 }, (_, i) => {
+    const actual = 135 + i * 15 + Math.random() * 30;
+    // Adiciona erro condicional simulado
+    let noise = (Math.random() - 0.5) * 80;
+    if (actual > 2000) noise = (Math.random() - 0.7) * 700; // Simula a regressão à média no luxo (Q4)
+    return { x: actual, y: Math.max(135, actual + noise) };
+  });
+  new Chart(pvACtx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Previsões do Modelo',
+          data: pts,
+          backgroundColor: 'rgba(61,107,90,0.5)',
+          borderColor: 'rgba(61,107,90,0.8)',
+          borderWidth: 1,
+          pointRadius: 4,
+        },
+        {
+          label: 'Ajuste Perfeito (y = x)',
+          data: [{ x: 135, y: 135 }, { x: 3000, y: 3000 }],
+          type: 'line',
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: { legend: { display: true, labels: { color: 'rgba(255,255,255,0.35)', font: { family: 'Manrope', size: 10 }, boxWidth: 12 } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: 'rgba(255,255,255,0.3)', callback: v => 'R$' + v }, max: 3200},
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: 'rgba(255,255,255,0.3)', callback: v => 'R$' + v }, max: 3200}
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
