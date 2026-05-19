@@ -1,0 +1,8 @@
+pandas>=2.0
+numpy>=1.24
+matplotlib>=3.7
+plotly>=5.18
+shap>=0.44
+jupyterlab>=4.0
+notebook>=7.0
+ipykernel>=6.0
